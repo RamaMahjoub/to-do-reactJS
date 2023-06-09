@@ -1,26 +1,32 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { RouterProvider } from "react-router-dom";
+import { router } from "./router/routes";
+import { AuthContext } from "./context/AuthContext";
+import { useContext } from "react";
+import TokenExpire from "./components/TokenExpire";
+import { apiInterceptor, refreshAxios } from "./apis/axios";
+import { ToastContainer, Flip, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
-}
+  const { showLoginDialog, show } = useContext(AuthContext);
 
+  refreshAxios.interceptors.request.use((config) =>
+    apiInterceptor(config, show)
+  );
+
+  return (
+    <>
+      <ToastContainer
+        transition={Flip}                
+        autoClose={8000}
+        hideProgressBar={true}
+        theme="colored"
+        position={toast.POSITION.BOTTOM_CENTER}
+      ></ToastContainer>
+      {showLoginDialog && <TokenExpire />}
+      <RouterProvider router={router} />
+    </>
+  );                
+}
+ 
 export default App;
