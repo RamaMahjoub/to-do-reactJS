@@ -5,21 +5,15 @@ import { useCallback, useContext } from "react";
 import { TaskContext } from "../context/TaskContext";
 
 export const useTaskService = () => {
-  const {
-    setTodoTasks,
-    setInProgressTasks,
-    setCompletedTasks,
-  } = useContext(TaskContext);
+  const { setTodoTasks, setInProgressTasks, setCompletedTasks, getTasks } =
+    useContext(TaskContext);
 
   const createTask = async (payload: ITaskRequest, loading: () => void) => {
     try {
       loading();
       await TaskService.createTask(payload).then((response) => {
-        response.data.status === "To do"
-          ? setTodoTasks((pre) => [...pre, response.data])
-          : response.data.status === "In progress"
-          ? setInProgressTasks((pre) => [...pre, response.data])
-          : setCompletedTasks((pre) => [...pre, response.data]);
+        const { handleTasks } = getTasks(response.data.status);
+        handleTasks((pre) => [...pre, response.data]);
         loading();
         toast.success("Task added successfully");
       });
@@ -37,29 +31,14 @@ export const useTaskService = () => {
     try {
       loading();
       await TaskService.updateTask(taskId, payload).then((response) => {
-        response.data.status === "To do"
-          ? setTodoTasks((pre) => {
-              const data = [...pre];
-              const taskIndex = data.findIndex((item) => item.id === taskId);
-              const updatedTask = response.data;
-              data[taskIndex] = updatedTask;
-              return data;
-            })
-          : response.data.status === "In progress"
-          ? setInProgressTasks((pre) => {
-              const data = [...pre];
-              const taskIndex = data.findIndex((item) => item.id === taskId);
-              const updatedTask = response.data;
-              data[taskIndex] = updatedTask;
-              return data;
-            })
-          : setCompletedTasks((pre) => {
-              const data = [...pre];
-              const taskIndex = data.findIndex((item) => item.id === taskId);
-              const updatedTask = response.data;
-              data[taskIndex] = updatedTask;
-              return data;
-            });
+        const { handleTasks } = getTasks(response.data.status);
+        handleTasks((pre) => {
+          const data = [...pre];
+          const taskIndex = data.findIndex((item) => item.id === taskId);
+          const updatedTask = response.data;
+          data[taskIndex] = updatedTask;
+          return data;
+        });
         loading();
         toast.success("Task edited successfully");
       });
@@ -77,32 +56,15 @@ export const useTaskService = () => {
     try {
       loading();
       await TaskService.deleteTask(taskId).then(() => {
-        status === "To do"
-          ? setTodoTasks((pre) => {
-              const data = [...pre];
-              const newData = data.filter((item) => {
-                return item.id !== taskId;
-              });
+        const { handleTasks } = getTasks(status);
+        handleTasks((pre) => {
+          const data = [...pre];
+          const newData = data.filter((item) => {
+            return item.id !== taskId;
+          });
 
-              return newData;
-            })
-          : status === "In progress"
-          ? setInProgressTasks((pre) => {
-              const data = [...pre];
-              const newData = data.filter((item) => {
-                return item.id !== taskId;
-              });
-
-              return newData;
-            })
-          : setCompletedTasks((pre) => {
-              const data = [...pre];
-              const newData = data.filter((item) => {
-                return item.id !== taskId;
-              });
-
-              return newData;
-            });
+          return newData;
+        });
         loading();
         toast.success("Task deleted successfully");
       });
@@ -144,16 +106,13 @@ export const useTaskService = () => {
 
   const reOrderInSameColumn = async (payload: any) => {
     try {
+      const { handleTasks } = getTasks(payload.columnTitle);
       await TaskService.reOrderInSamaColumn({
         columnTitle: payload.columnTitle,
         source: payload.sourceIndex,
         destination: payload.destinationIndex,
       }).then((response) => {
-        payload.columnTitle === "To do"
-          ? setTodoTasks(response.data)
-          : payload.columnTitle === "In progress"
-          ? setInProgressTasks(response.data)
-          : setCompletedTasks(response.data);
+        handleTasks(response.data);
       });
     } catch (err) {
       toast.error("something went wrong");
@@ -162,6 +121,8 @@ export const useTaskService = () => {
 
   const reOrderNotInSameColumn = async (payload: any) => {
     try {
+      const source = getTasks(payload.startTitle);
+      const dest = getTasks(payload.endTitle);
       await TaskService.reOrderNotInSamaColumn({
         columnSource: payload.startTitle,
         columnDestination: payload.endTitle,
@@ -170,16 +131,8 @@ export const useTaskService = () => {
         source: payload.sourceIndex,
         destination: payload.destinationIndex,
       }).then((response) => {
-        payload.startTitle === "To do"
-          ? setTodoTasks(response.data.sourceReturn)
-          : payload.startTitle === "In progress"
-          ? setInProgressTasks(response.data.sourceReturn)
-          : setCompletedTasks(response.data.sourceReturn);
-        payload.endTitle === "To do"
-          ? setTodoTasks(response.data.destReturn)
-          : payload.endTitle === "In progress"
-          ? setInProgressTasks(response.data.destReturn)
-          : setCompletedTasks(response.data.destReturn);
+        source.handleTasks(response.data.sourceReturn);
+        dest.handleTasks(response.data.destReturn);
       });
     } catch (err) {
       toast.error("something went wrong");
