@@ -6,6 +6,7 @@ import TokenExpire from "./components/TokenExpire";
 import { apiInterceptor, refreshAxios } from "./apis/axios";
 import { ToastContainer, Flip, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useTheme } from "@mui/material/styles";
 
 function App() {
   const { showLoginDialog, show } = useContext(AuthContext);
@@ -14,6 +15,9 @@ function App() {
     apiInterceptor(config, show)
   );
 
+  const theme = useTheme()
+  
+  console.log('theme', theme)
   return (
     <>
       <ToastContainer

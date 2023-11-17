@@ -4,6 +4,7 @@ import {
   ReactNode,
   SetStateAction,
   createContext,
+  useCallback,
   useState,
 } from "react";
 import { TaskSchema } from "../schema/Task";
@@ -39,7 +40,7 @@ export const TaskProvider: FC<Props> = ({ children }) => {
   const [inProgressTasks, setInProgressTasks] = useState<Array<TaskSchema>>([]);
   const [completedTasks, setCompletedTasks] = useState<Array<TaskSchema>>([]);
 
-  const getTasks = (status: string) => {
+  const getTasks = useCallback((status: string) => {
     let data: {
       tasks: Array<TaskSchema>;
       handleTasks: Dispatch<SetStateAction<Array<TaskSchema>>>;
@@ -53,8 +54,8 @@ export const TaskProvider: FC<Props> = ({ children }) => {
       ? (data = { tasks: inProgressTasks, handleTasks: setInProgressTasks })
       : (data = { tasks: completedTasks, handleTasks: setCompletedTasks });
     return data;
-  };
-  
+  }, [toDoTasks, inProgressTasks, completedTasks]);
+
   return (
     <TaskContext.Provider
       value={{
